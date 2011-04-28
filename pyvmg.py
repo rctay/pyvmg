@@ -17,7 +17,7 @@ def datecmp(x,y):
         return 0
     else:
         return 1
-    
+
 class VMGReader(object):
     """Reader for a .vmg file to get back the telephone number, date, body
     """
@@ -27,7 +27,7 @@ class VMGReader(object):
         self.telre = re.compile(r'TEL:(\+?\d+)')
         self.datere = re.compile(r'X-NOK-DT:([\dTZ]+)')
         self.bodyre = re.compile(r'Date:[\d.: ]+\n(.*)END:VBODY',re.DOTALL)
-    
+
     def read(self, filename):
         """Open a .vmg file and remove the NULL characters and store the text message
         """
@@ -59,7 +59,7 @@ class VMGReader(object):
         else:
             data['body'] = ''
         return data
-        
+
 class Writer(object):
     """Base class for a writer object to convert all VMG files to a single file
     """
@@ -80,7 +80,7 @@ class Writer(object):
             reader.read(f)
             self.messages.append(reader.process())
         self.messages.sort(datecmp)     # Sort the messages according to date
-            
+
 class XMLWriter(Writer):
     """Writer object for XML file as output
     """
@@ -94,7 +94,7 @@ class XMLWriter(Writer):
             self.file.write(xmlstr)
         self.file.write('</messages>')
         self.file.close()
-        
+
 class CSVWriter(Writer):
     """Writer object for CSV file as output
     """
@@ -107,7 +107,7 @@ class CSVWriter(Writer):
             outputlist.append((msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body']))
         csvwriter.writerows(outputlist)
         self.file.close()
-        
+
 class TextWriter(Writer):
     """Writer object for text file as output
 
@@ -130,4 +130,4 @@ class TextWriter(Writer):
             txtstr = tmpl %(msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body'])
             self.file.write(txtstr)
         self.file.close()
-        
+
