@@ -63,6 +63,9 @@ class VMGReader(object):
 class Writer(object):
     """Base class for a writer object to convert all VMG files to a single file
     """
+
+    DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
     def __init__(self, filename):
         """Create a file writer object with the filename specified
         """
@@ -89,7 +92,7 @@ class XMLWriter(Writer):
         self.file.write('<messages>')
         tmpl = "<message><tel>%s</tel><date>%s</date><body>%s</body></message>"
         for msg in self.messages:
-            xmlstr = tmpl %(msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body'])
+            xmlstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
             self.file.write(xmlstr)
         self.file.write('</messages>')
         self.file.close()
@@ -103,7 +106,7 @@ class CSVWriter(Writer):
         fn = csv.writer(self.file).writerow
         fn(('telno', 'date', 'body'))
         for msg in self.messages:
-            fn((msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body']))
+            fn((msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body']))
         self.file.close()
 
 class TextWriter(Writer):
@@ -125,7 +128,7 @@ class TextWriter(Writer):
         for msg in self.messages:
             if msg['telno'] == '':
                 continue
-            txtstr = tmpl %(msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body'])
+            txtstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
             self.file.write(txtstr)
         self.file.close()
 
