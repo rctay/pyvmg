@@ -100,11 +100,10 @@ class CSVWriter(Writer):
     def write(self):
         """Read every message in the list and write to a CSV file
         """
-        csvwriter = csv.writer(self.file)
-        outputlist = [('telno', 'date', 'body')]
+        fn = csv.writer(self.file).writerow
+        fn(('telno', 'date', 'body'))
         for msg in self.messages:
-            outputlist.append((msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body']))
-        csvwriter.writerows(outputlist)
+            fn((msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body']))
         self.file.close()
 
 class TextWriter(Writer):
