@@ -66,11 +66,10 @@ class Writer(object):
 
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-    def __init__(self, filename):
+    def __init__(self, file):
         """Create a file writer object with the filename specified
         """
-        self.filename = filename
-        self.file = open(filename, 'w')
+        self.file = file
 
     def processdir(self, dirpath):
         """Given a directory path, process all the .vmg files in it and store as a list
@@ -95,7 +94,6 @@ class XMLWriter(Writer):
             xmlstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
             self.file.write(xmlstr)
         self.file.write('</messages>')
-        self.file.close()
 
 class CSVWriter(Writer):
     """Writer object for CSV file as output
@@ -107,7 +105,6 @@ class CSVWriter(Writer):
         fn(('telno', 'date', 'body'))
         for msg in self.messages:
             fn((msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body']))
-        self.file.close()
 
 class TextWriter(Writer):
     """Writer object for text file as output
@@ -130,12 +127,13 @@ class TextWriter(Writer):
                 continue
             txtstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
             self.file.write(txtstr)
-        self.file.close()
 
 
 def main():
     from optparse import OptionGroup, OptionParser
-    parser = OptionParser(usage="Usage: $prog[ options] dir outfile")
+    import sys
+
+    parser = OptionParser(usage="Usage: $prog[ options] dir")
 
     formats = {
         'xml': XMLWriter,
@@ -146,16 +144,28 @@ def main():
         choices=formats.keys(),
         help="one of: %s" % ", ".join(formats.keys()))
 
+    parser.add_option('-o', '--output', dest="filename", default=None,
+        help="file to write to; if not specified, writes to stdout")
+
     (options, args) = parser.parse_args()
-    if len(args) != 2 or not options.format:
+    if not len(args) or not options.format:
         parser.print_help()
         return
 
-    dir, outfile = args
+    if options.filename:
+        outfile = open(options.filename, 'w')
+    else:
+        outfile = sys.stdout
+
+    dir = args[0]
+
     cls = formats[options.format]
     writer = cls(outfile)
     writer.processdir(dir)
     writer.write()
+
+    if options.filename:
+        outfile.close()
 
 
 if __name__ == '__main__':
