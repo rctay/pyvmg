@@ -52,7 +52,7 @@ class VMGReader(object):
                 data['date']  = datetime.datetime.strptime(data['date'], '%Y%m%dT%H%M%SZ')
             except ValueError:
                 # Use Epoch as date if no date was available
-                data['date'] = datetime.datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+                data['date'] = datetime.datetime(1970, 1, 1, 0, 0)
         bodymatch = self.bodyre.search(self.message)
         if bodymatch:
             data['body'] = escapexml(bodymatch.group(1))[:-1]
