@@ -131,3 +131,31 @@ class TextWriter(Writer):
             self.file.write(txtstr)
         self.file.close()
 
+
+def main():
+    from optparse import OptionGroup, OptionParser
+    parser = OptionParser(usage="Usage: $prog[ options] dir outfile")
+
+    formats = {
+        'xml': XMLWriter,
+        'csv': CSVWriter,
+        'txt': TextWriter,
+    }
+    parser.add_option('-f', '--format', dest="format",
+        choices=formats.keys(),
+        help="one of: %s" % ", ".join(formats.keys()))
+
+    (options, args) = parser.parse_args()
+    if len(args) != 2 or not options.format:
+        parser.print_help()
+        return
+
+    dir, outfile = args
+    cls = formats[options.format]
+    writer = cls(outfile)
+    writer.processdir(dir)
+    writer.write()
+
+
+if __name__ == '__main__':
+    main()
