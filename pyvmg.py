@@ -76,7 +76,6 @@ class Writer(object):
         reader = VMGReader()
         self.messages = []
         for f in files:
-            print f
             reader.read(f)
             self.messages.append(reader.process())
         self.messages.sort(datecmp)     # Sort the messages according to date
