@@ -1,5 +1,4 @@
 import re
-import glob
 import csv
 import datetime
 
@@ -71,13 +70,12 @@ class Writer(object):
         """
         self.file = file
 
-    def processdir(self, dirpath):
-        """Given a directory path, process all the .vmg files in it and store as a list
+    def process(self, filenames):
+        """Given a list .vmg filenames, process them and store as a list
         """
-        files = glob.glob(dirpath + '/*.vmg')
         reader = VMGReader()
         self.messages = []
-        for f in files:
+        for f in filenames:
             reader.read(f)
             self.messages.append(reader.process())
         self.messages.sort(datecmp)     # Sort the messages according to date
@@ -130,10 +128,13 @@ class TextWriter(Writer):
 
 
 def main():
+    import glob
     from optparse import OptionGroup, OptionParser
+    import os
+    import stat
     import sys
 
-    parser = OptionParser(usage="Usage: $prog[ options] dir")
+    parser = OptionParser(usage="Usage: $prog[ options] file/dir...")
 
     formats = {
         'xml': XMLWriter,
@@ -157,11 +158,24 @@ def main():
     else:
         outfile = sys.stdout
 
-    dir = args[0]
-
     cls = formats[options.format]
     writer = cls(outfile)
-    writer.processdir(dir)
+
+    try:
+        filenames = []
+        for spec in args:
+            st = os.stat(spec)
+            if stat.S_ISDIR(st.st_mode):
+                filenames.extend(glob.glob(spec + '/*.vmg'))
+            elif stat.S_ISREG(st.st_mode):
+                filenames.append(spec)
+            else:
+                raise os.error
+        writer.process(filenames)
+    except os.error as e:
+        sys.stderr.write("%s\n" % str(e))
+        return
+
     writer.write()
 
     if options.filename:
