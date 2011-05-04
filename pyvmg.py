@@ -78,7 +78,9 @@ class Writer(object):
         self.messages = []
         for f in files:
             reader.read(f)
-            self.messages.append(reader.process())
+            msg = reader.process()
+            msg['date'] = msg['date'].strftime(self.DATETIME_FORMAT)
+            self.messages.append(msg)
         self.messages.sort(datecmp)     # Sort the messages according to date
 
 class XMLWriter(Writer):
@@ -90,7 +92,7 @@ class XMLWriter(Writer):
         self.file.write('<messages>')
         tmpl = "<message><tel>%s</tel><date>%s</date><body>%s</body></message>"
         for msg in self.messages:
-            xmlstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
+            xmlstr = tmpl %(msg['telno'], msg['date'], msg['body'])
             self.file.write(xmlstr)
         self.file.write('</messages>')
         self.file.close()
@@ -104,7 +106,7 @@ class CSVWriter(Writer):
         fn = csv.writer(self.file).writerow
         fn(('telno', 'date', 'body'))
         for msg in self.messages:
-            fn((msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body']))
+            fn((msg['telno'], msg['date'], msg['body']))
         self.file.close()
 
 class TextWriter(Writer):
@@ -126,7 +128,7 @@ class TextWriter(Writer):
         for msg in self.messages:
             if msg['telno'] == '':
                 continue
-            txtstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
+            txtstr = tmpl %(msg['telno'], msg['date'], msg['body'])
             self.file.write(txtstr)
         self.file.close()
 
