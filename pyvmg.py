@@ -52,7 +52,7 @@ class VMGReader(object):
                 data['date']  = datetime.datetime.strptime(data['date'], '%Y%m%dT%H%M%SZ')
             except ValueError:
                 # Use Epoch as date if no date was available
-                data['date'] = datetime.datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+                data['date'] = datetime.datetime(1970, 1, 1, 0, 0)
         bodymatch = self.bodyre.search(self.message)
         if bodymatch:
             data['body'] = escapexml(bodymatch.group(1))[:-1]
@@ -63,6 +63,9 @@ class VMGReader(object):
 class Writer(object):
     """Base class for a writer object to convert all VMG files to a single file
     """
+
+    DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
     def __init__(self, filename):
         """Create a file writer object with the filename specified
         """
@@ -76,7 +79,6 @@ class Writer(object):
         reader = VMGReader()
         self.messages = []
         for f in files:
-            print f
             reader.read(f)
             self.messages.append(reader.process())
         self.messages.sort(datecmp)     # Sort the messages according to date
@@ -90,7 +92,7 @@ class XMLWriter(Writer):
         self.file.write('<messages>')
         tmpl = "<message><tel>%s</tel><date>%s</date><body>%s</body></message>"
         for msg in self.messages:
-            xmlstr = tmpl %(msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body'])
+            xmlstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
             self.file.write(xmlstr)
         self.file.write('</messages>')
         self.file.close()
@@ -101,11 +103,10 @@ class CSVWriter(Writer):
     def write(self):
         """Read every message in the list and write to a CSV file
         """
-        csvwriter = csv.writer(self.file)
-        outputlist = [('telno', 'date', 'body')]
+        fn = csv.writer(self.file).writerow
+        fn(('telno', 'date', 'body'))
         for msg in self.messages:
-            outputlist.append((msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body']))
-        csvwriter.writerows(outputlist)
+            fn((msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body']))
         self.file.close()
 
 class TextWriter(Writer):
@@ -127,7 +128,7 @@ class TextWriter(Writer):
         for msg in self.messages:
             if msg['telno'] == '':
                 continue
-            txtstr = tmpl %(msg['telno'], msg['date'].strftime('%Y-%m-%d %H:%M:%S'), msg['body'])
+            txtstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
             self.file.write(txtstr)
         self.file.close()
 
