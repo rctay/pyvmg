@@ -61,12 +61,11 @@ class Writer(object):
     """Base class for a writer object to convert all VMG files to a single file
     """
 
-    DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-    def __init__(self, file):
+    def __init__(self, file, datetime_fmt):
         """Create a file writer object with the filename specified
         """
         self.file = file
+        self.datetime_fmt = datetime_fmt
 
     def process(self, filenames):
         """Given a list .vmg filenames, process them and store as a list
@@ -76,7 +75,7 @@ class Writer(object):
         for f in filenames:
             reader.read(f)
             msg = reader.process()
-            msg['date'] = msg['date'].strftime(self.DATETIME_FORMAT)
+            msg['date'] = msg['date'].strftime(self.datetime_fmt)
             self.messages.append(msg)
         self.messages.sort(datecmp)     # Sort the messages according to date
 
@@ -145,6 +144,8 @@ def main():
         choices=formats.keys(),
         help="one of: %s" % ", ".join(formats.keys()))
 
+    parser.add_option('-d', '--dateformat', dest="datetime_fmt",
+        default='%Y-%m-%d %H:%M:%S')
     parser.add_option('-o', '--output', dest="filename", default=None,
         help="file to write to; if not specified, writes to stdout")
 
@@ -159,7 +160,7 @@ def main():
         outfile = sys.stdout
 
     cls = formats[options.format]
-    writer = cls(outfile)
+    writer = cls(outfile, options.datetime_fmt)
 
     try:
         filenames = []
