@@ -20,12 +20,10 @@ def datecmp(x,y):
 class VMGReader(object):
     """Reader for a .vmg file to get back the telephone number, date, body
     """
-    def __init__(self):
-        """Initialize with the required regexes
-        """
-        self.telre = re.compile(r'TEL:(\+?\d+)')
-        self.datere = re.compile(r'X-NOK-DT:([\dTZ]+)')
-        self.bodyre = re.compile(r'Date:[\d.: ]+\n(.*)END:VBODY',re.DOTALL)
+
+    TEL_RE = re.compile(r'TEL:(\+?\d+)')
+    DATE_RE = re.compile(r'X-NOK-DT:([\dTZ]+)')
+    BODY_RE = re.compile(r'Date:[\d.: ]+\n(.*)END:VBODY',re.DOTALL)
 
     def read(self, filename):
         """Open a .vmg file and remove the NULL characters and store the text message
@@ -39,12 +37,12 @@ class VMGReader(object):
         telephone number, date and body of message
         """
         data = {}
-        telmatch = self.telre.search(self.message)
+        telmatch = self.TEL_RE.search(self.message)
         if telmatch:
             data['telno'] = telmatch.group(1)
         else:
             data['telno'] = ''
-        datematch = self.datere.search(self.message)
+        datematch = self.DATE_RE.search(self.message)
         if datematch:
             data['date'] = datematch.group(1)
             try:
@@ -52,7 +50,7 @@ class VMGReader(object):
             except ValueError:
                 # Use Epoch as date if no date was available
                 data['date'] = datetime.datetime(1970, 1, 1, 0, 0)
-        bodymatch = self.bodyre.search(self.message)
+        bodymatch = self.BODY_RE.search(self.message)
         if bodymatch:
             data['body'] = escapexml(bodymatch.group(1))[:-1]
         else:
@@ -77,7 +75,9 @@ class Writer(object):
         self.messages = []
         for f in filenames:
             reader.read(f)
-            self.messages.append(reader.process())
+            msg = reader.process()
+            msg['date'] = msg['date'].strftime(self.DATETIME_FORMAT)
+            self.messages.append(msg)
         self.messages.sort(datecmp)     # Sort the messages according to date
 
 class XMLWriter(Writer):
@@ -89,7 +89,7 @@ class XMLWriter(Writer):
         self.file.write('<messages>')
         tmpl = "<message><tel>%s</tel><date>%s</date><body>%s</body></message>"
         for msg in self.messages:
-            xmlstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
+            xmlstr = tmpl %(msg['telno'], msg['date'], msg['body'])
             self.file.write(xmlstr)
         self.file.write('</messages>')
 
@@ -102,7 +102,7 @@ class CSVWriter(Writer):
         fn = csv.writer(self.file).writerow
         fn(('telno', 'date', 'body'))
         for msg in self.messages:
-            fn((msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body']))
+            fn((msg['telno'], msg['date'], msg['body']))
 
 class TextWriter(Writer):
     """Writer object for text file as output
@@ -123,7 +123,7 @@ class TextWriter(Writer):
         for msg in self.messages:
             if msg['telno'] == '':
                 continue
-            txtstr = tmpl %(msg['telno'], msg['date'].strftime(self.DATETIME_FORMAT), msg['body'])
+            txtstr = tmpl %(msg['telno'], msg['date'], msg['body'])
             self.file.write(txtstr)
 
 
